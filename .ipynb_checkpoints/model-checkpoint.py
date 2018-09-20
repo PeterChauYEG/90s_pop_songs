@@ -1,6 +1,7 @@
 # Model Chaaracter Level Script
 
 import csv
+from coremltools import converters
 from datetime import datetime
 from IPython.display import SVG
 from keras import backend as K
@@ -153,6 +154,7 @@ variant = '{}ex-{}a-{}b-{}c'.format(n_examples, activations, batch_size, max_cha
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 diagram_dir = 'diagram/{}-{}'.format(variant, timestamp)
 log_dir = 'logs/{}-{}'.format(variant, timestamp)
+mlmodel_dir = 'model/{}-{}.mlmodel'.format(variant, timestamp)
 model_dir = 'model/{}-{}.hdf5'.format(variant, timestamp)
 
 # draw a model diagram and save it to disk
@@ -178,3 +180,7 @@ model.fit(x_dataset,
 
 # Export Model
 model.save(model_dir)
+
+# Export CoreML Model
+coreml_model = converters.keras.convert(model)
+coreml_model.save(mlmodel_dir)
