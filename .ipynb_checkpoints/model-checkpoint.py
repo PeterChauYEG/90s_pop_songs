@@ -8,7 +8,6 @@ from keras.callbacks import EarlyStopping, TensorBoard
 from keras.layers import Dense, Input, LSTM
 from keras.models import Model
 from keras.optimizers import RMSprop
-from keras.preprocessing.text import text_to_word_sequence
 from keras.utils import plot_model
 from keras.utils.vis_utils import model_to_dot
 import numpy as np
@@ -33,6 +32,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 # verify that a gpu is listed
 K.tensorflow_backend._get_available_gpus()
 
+# functions
 def deprocessPrediction(ix_to_char, prediction):
     index = np.argmax(prediction)
     char = ix_to_char[index]
@@ -87,6 +87,7 @@ def sample_predictions(preds, temperature=0.5):
     probas = np.random.multinomial(1, preds, 1)
     return probas
     
+# Load data    
 with open(charset_file, 'r') as csv_file:
     reader = csv.reader(csv_file, delimiter=",")
     charset = []
@@ -99,6 +100,7 @@ with open(dataset_file, 'r') as csv_file:
     for row in reader:
         dataset.append(row)
         
+# Generate Dataset        
 # create dictionarys
 char_to_ix, ix_to_char = generateCharacterConverters(charset)
 n_charset = len(charset)
@@ -114,6 +116,7 @@ x_dataset, y_dataset = generateXYDatasets(char_to_ix, dataset, n_examples, n_cha
 print("Number of examples: {}".format(n_examples))
 print("max characters: {}".format(max_char_n))
 
+# Validate Dataset
 x_example = x_dataset[2] 
 
 x_example_string = []
@@ -134,6 +137,7 @@ print("y_example shape: {}".format(y_example.shape))
 print("y_example one-hot: {}".format(y_example))
 print("y_example: {}".format(char))
 
+# Model
 model_input = Input(shape=(None, n_charset))
 x = LSTM(activations)(model_input)
 x = Dense(n_charset, activation='softmax')(x)
@@ -143,11 +147,13 @@ model = Model(inputs=model_input, outputs=x)
 optimizer = RMSprop(lr=learning_rate)
 model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
+# Plot model
 # generate logging variables
 variant = '{}ex-{}a-{}b-{}c'.format(n_examples, activations, batch_size, max_char_n)
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-log_dir = 'logs/{}-{}'.format(variant, timestamp)
 diagram_dir = 'diagram/{}-{}'.format(variant, timestamp)
+log_dir = 'logs/{}-{}'.format(variant, timestamp)
+model_dir = 'model/{}-{}.hdf5'.format(variant, timestamp)
 
 # draw a model diagram and save it to disk
 plot_model(model, to_file=diagram_dir)
@@ -169,25 +175,6 @@ model.fit(x_dataset,
           shuffle=True,
           validation_split=training_ratio,
           callbacks=[early, TensorBoard(log_dir=log_dir)])                      
-          
-example = 'sweet dreams are made of these'          
 
-# convert example to a sequence of one-hot encoded chars
-preprocessed_example = preprocessExample(char_to_ix, example, n_charset)
-
-prediction = model.predict(preprocessed_example)
-
-char = deprocessPrediction(ix_to_char, prediction[0])
-
-print("Prediction: {}".format(char))
-
-sys.stdout.write(example)
-
-for i in range(500):
-    prediction = model.predict(preprocessed_example, verbose=0)[0]
-    sampled_prediction = sample_predictions(prediction)
-    next_char = deprocessPrediction(ix_to_char, sampled_prediction[0])
-    preprocessed_example[0][:-1] = preprocessed_example[0][1:]
-    preprocessed_example[0][-1] = sampled_prediction
-    sys.stdout.write(next_char)
-    sys.stdout.flush()
+# Export Model
+model.save(model_dir)
