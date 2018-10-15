@@ -14,4 +14,5 @@ Details can be found with it's accompanying [blog post](http://labone.tech/90s-p
     - 500 being the number of chars to generate
     - 'model/100000ex-128a-50b-20c-2018-09-19 19:41:58.hdf5' being the model file
     - 'data/charset.csv' being the charset array file
+
 peace. love. spice up your life.
